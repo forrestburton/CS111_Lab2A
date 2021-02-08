@@ -1,0 +1,12 @@
+NAME: Forrest Burton
+EMAIL: burton.forrest10@gmail.com
+ID: 005324612
+
+The tarball contains:
+lab2_add.c: 
+lab2_list.c:
+SortedList.c:
+SortedList.h:
+Makefile: contains options default build, dist, clean, tests, and graphs
+
+**Discussion 1B very helpful
