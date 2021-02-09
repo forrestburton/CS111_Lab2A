@@ -17,6 +17,8 @@ int opt_yield = 0;
 int opt_sync = 0;
 pthread_mutex_t protect;
 long spin_lock = 0;
+int iterations = 1;
+int thread_num = 1;
 
 void add(long long *pointer, long long value) {
     long long sum = *pointer + value;
@@ -32,26 +34,26 @@ void free_memory(void) {
     }
 }
 
-void add_atomically(void *counter, unsigned long val) {
+void add_atomically(long long *counter, unsigned long val) {
     long long curr_val, incremented_val;    
     do {
         curr_val = *counter;
         incremented_val = curr_val + val;
-    } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == false);
+    } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == 0);
 }
 
 void* thread_tasks(void) {
     switch(opt_sync) {
         case 0:  //no sync option given
-            for (i = 0; i < iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 add(&counter, 1);
             }
-            for (i = 0; i < iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 add(&counter, -1);
             }
             break;
         case 'm': //mutex
-            for (i = 0; i < iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 if (pthread_mutex_lock(&protect) != 0) {
                     fprintf(stderr, "Error locking mutex\n");
                     exit(1);
@@ -62,7 +64,7 @@ void* thread_tasks(void) {
                     exit(1);
                 }
             }
-            for (i = 0; i < iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 if (pthread_mutex_lock(&protect) != 0) {
                     fprintf(stderr, "Error locking mutex\n");
                     exit(1);
@@ -75,22 +77,22 @@ void* thread_tasks(void) {
             }
             break;
         case 's':  //spinlock
-            for (i = 0; i < iterations; i++) {
-                while (_sync_lock_test_and_set(&spin_lock, 1));
+            for (int i = 0; i < iterations; i++) {
+                while (__sync_lock_test_and_set(&spin_lock, 1));
                 add(&counter, 1);
-                _sync_lock_release(&spin_lock);
+                __sync_lock_release(&spin_lock);
             }
-            for (i = 0; i < iterations; i++) {
-                while (_sync_lock_test_and_set(&spin_lock, 1));
+            for (int i = 0; i < iterations; i++) {
+                while (__sync_lock_test_and_set(&spin_lock, 1));
                 add(&counter, -1);
-                _sync_lock_release(&spin_lock);
+                __sync_lock_release(&spin_lock);
             }
             break;
         case 'c':  //compare-and-swap
-            for (i = 0; i < iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 add_atomically(&counter, 1);
             }
-            for (i = 0; i < iterations; i++) {
+            for (int i = 0; i < iterations; i++) {
                 add_atomically(&counter, -1);
             }
             break;
@@ -99,12 +101,11 @@ void* thread_tasks(void) {
             exit(1);
             break;
     }
+    return NULL;
 }
 
 int main(int argc, char *argv[]) {
     int c;
-    int iterations = 1;
-    int thread_num = 1;
     
     while(1) {
         int option_index = 0;
@@ -176,7 +177,7 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < thread_num; i++) { //join threads
-        if (pthread_join(threads[i], NULL) != 0) {
+        if (pthread_join(&threads[i], NULL) != 0) {
             fprintf(stderr, "Error, joining threads failed: %s\n", strerror(errno));
             exit(1);
         }
@@ -190,8 +191,8 @@ int main(int argc, char *argv[]) {
 
     //get total time
     unsigned long total_time_nsec; 
-    long nsec = end->tv_nsec - start->tv_nsec;
-    time_t sec = end->tv_sec - start->tv_sec;
+    long nsec = end_time->tv_nsec - start_time->tv_nsec;
+    time_t sec = end_time->tv_sec - start_time->tv_sec;
     total_time_nsec = sec*1000000000 + nsec;
 
     //get average time per operation
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
             break;
     }
 
-    fprintf(stdout, "%s,%d,%d,%ld,%ul,%ld,%lld\n", output, thread_num, iterations, ops, total_time_nsec, avg_time_per_op, counter);
+    fprintf(stdout, "%s,%d,%d,%ld,%lu,%ld,%lld\n", output, thread_num, iterations, ops, total_time_nsec, avg_time_per_op, counter);
 
     exit(0);
 }
