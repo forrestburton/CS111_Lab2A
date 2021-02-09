@@ -16,7 +16,7 @@ long long counter = 0;
 int opt_yield = 0;
 int opt_sync = 0;
 pthread_mutex_t protect;
-
+long spin_lock = 0;
 
 void add(long long *pointer, long long value) {
     long long sum = *pointer + value;
@@ -30,6 +30,14 @@ void free_memory(void) {
     if (threads != NULL) {
         free(threads);
     }
+}
+
+void add_atomically(void *counter, unsigned long val) {
+    long long curr_val, incremented_val;    
+    do {
+        curr_val = *counter;
+        incremented_val = curr_val + val;
+    } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == false);
 }
 
 void* thread_tasks(void) {
@@ -68,25 +76,28 @@ void* thread_tasks(void) {
             break;
         case 's':  //spinlock
             for (i = 0; i < iterations; i++) {
+                while (_sync_lock_test_and_set(&spin_lock, 1));
                 add(&counter, 1);
+                _sync_lock_release(&spin_lock);
             }
             for (i = 0; i < iterations; i++) {
+                while (_sync_lock_test_and_set(&spin_lock, 1));
                 add(&counter, -1);
+                _sync_lock_release(&spin_lock);
             }
             break;
         case 'c':  //compare-and-swap
             for (i = 0; i < iterations; i++) {
-                add(&counter, 1);
+                add_atomically(&counter, 1);
             }
             for (i = 0; i < iterations; i++) {
-                add(&counter, -1);
+                add_atomically(&counter, -1);
             }
             break;
         default: 
             fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's', 'c'] \n");
             exit(1);
             break;
-
     }
 }
 
