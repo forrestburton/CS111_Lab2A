@@ -32,4 +32,7 @@ SortedList.c: C module which contains the following methods for implementing a d
 SortedList.h: Header file which describes the API for the double linked list operation
 Makefile:     contains options default build, dist, clean, tests, and graphs
 
+Recourses:
 **Discussion 1B very helpful
+Converting string to int - https://stackoverflow.com/questions/7021725/how-to-convert-a-string-to-integer-in-c
+Multithreading in C - https://www.geeksforgeeks.org/multithreading-c-2/
