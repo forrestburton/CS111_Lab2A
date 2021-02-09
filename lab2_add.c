@@ -170,14 +170,14 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < thread_num; i++) { //create threads
-        if (pthread_create(threads[i], NULL, thread_tasks, NULL) != 0) {
+        if (pthread_create(&threads[i], NULL, thread_tasks, NULL) != 0) {
             fprintf(stderr, "Error, creation of a thread failed: %s\n", strerror(errno));
             exit(1);
         }
     }
 
     for (int i = 0; i < thread_num; i++) { //join threads
-        if (pthread_join(&threads[i], NULL) != 0) {
+        if (pthread_join(threads[i], NULL) != 0) {
             fprintf(stderr, "Error, joining threads failed: %s\n", strerror(errno));
             exit(1);
         }
@@ -191,8 +191,8 @@ int main(int argc, char *argv[]) {
 
     //get total time
     unsigned long total_time_nsec; 
-    long nsec = end_time->tv_nsec - start_time->tv_nsec;
-    time_t sec = end_time->tv_sec - start_time->tv_sec;
+    long nsec = end_time.tv_nsec - start_time.tv_nsec;
+    time_t sec = end_time.tv_sec - start_time.tv_sec;
     total_time_nsec = sec*1000000000 + nsec;
 
     //get average time per operation
