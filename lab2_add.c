@@ -188,5 +188,43 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    //get total time
+    unsigned long total_time_nsec; 
+    long nsec = end->tv_nsec - start->tv_nsec;
+    time_t sec = end->tv_sec - start->tv_sec;
+    total_time_nsec = sec*1000000000 + nsec;
+
+    //get average time per operation
+    long ops = thread_num * iterations * 2;
+    long avg_time_per_op = total_time_nsec / ops;
+
+    //print out stats - Name of test, thread#, itera#, operation#, runtime, avg t/oper, total
+    char output[50] = "";
+    strcat(output, "add");
+
+    if (opt_yield) {
+        strcat(output, "-yield");
+    }
+
+    //get name of test
+    switch(opt_sync) {
+        case 0:  //no sync option given
+            strcat(output, "-none");
+            break;
+        case 'm': //mutex
+            strcat(output, "-m");
+            break;
+        case 's':  //spinlock
+            strcat(output, "-s");
+            break;
+        case 'c':  //compare-and-swap
+           strcat(output, "-c");
+            break;
+        default: 
+            break;
+    }
+
+    fprintf(stdout, "%s,%d,%d,%ld,%ul,%ld,%lld\n", output, thread_num, iterations, ops, total_time_nsec, avg_time_per_op, counter);
+
     exit(0);
 }

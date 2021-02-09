@@ -49,3 +49,6 @@ timespec error - https://stackoverflow.com/questions/11153334/timespec-not-found
 clock_gettime(3) man page - https://linux.die.net/man/3/clock_gettime
 pthread_mutex_init(3) man page - https://linux.die.net/man/3/pthread_mutex_init
 pthread_mutex_lock(3) man page - https://linux.die.net/man/3/pthread_mutex_lock
+copying string to buffer - https://stackoverflow.com/questions/25838628/copying-string-literals-in-c-into-an-character-array/25838679
+strcat in C - https://www.holbertonschool.com/coding-resource-strcat-in-c
+fprintf vs printf - https://stackoverflow.com/questions/4627330/difference-between-fprintf-printf-and-sprintf
