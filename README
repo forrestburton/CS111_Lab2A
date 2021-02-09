@@ -8,7 +8,12 @@ Why does a significantly smaller number of iterations so seldom fail?
 
 QUESTION 2.1.2 - cost of yielding:
 Why are the --yield runs so much slower?
+The --yield runs much slower because the sched_yield() function temporarily makes each thread give up its time slice and therefore its control of 
+the CPU,therefore it takes much more time to execute the add() function for all the threads since they are giving up time slices. 
+
 Where is the additional time going?
+The additional time is going towards threads "yielding" the CPU or their time slice 
+
 Is it possible to get valid per-operation timings if we are using the --yield option?
 If so, explain how. If not, explain why not.
 
@@ -36,3 +41,8 @@ Recourses:
 **Discussion 1B very helpful
 Converting string to int - https://stackoverflow.com/questions/7021725/how-to-convert-a-string-to-integer-in-c
 Multithreading in C - https://www.geeksforgeeks.org/multithreading-c-2/
+pthread_create(3) man page - https://man7.org/linux/man-pages/man3/pthread_create.3.html
+timespec error - https://stackoverflow.com/questions/11153334/timespec-not-found-in-time-h
+clock_gettime(3) man page - https://linux.die.net/man/3/clock_gettime
+pthread_mutex_init(3) man page - https://linux.die.net/man/3/pthread_mutex_init
+pthread_mutex_lock(3) man page - https://linux.die.net/man/3/pthread_mutex_lock

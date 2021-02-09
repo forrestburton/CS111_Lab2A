@@ -1,23 +1,92 @@
 //NAME: Forrest Burton
 //EMAIL: burton.forrest10@gmail.com
 //ID: 005324612
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <getopt.h>
 #include <unistd.h>  
 #include <pthread.h> 
+#include <time.h>
+#include <string.h>
 
 pthread_t* threads = NULL;
+long long counter = 0;
+int opt_yield = 0;
+int opt_sync = 0;
+pthread_mutex_t protect;
+
 
 void add(long long *pointer, long long value) {
     long long sum = *pointer + value;
+    if (opt_yield) {
+        sched_yield();
+    }
     *pointer = sum;
 }
 
 void free_memory(void) {
     if (threads != NULL) {
         free(threads);
+    }
+}
+
+void* thread_tasks(void) {
+    switch(opt_sync) {
+        case 0:  //no sync option given
+            for (i = 0; i < iterations; i++) {
+                add(&counter, 1);
+            }
+            for (i = 0; i < iterations; i++) {
+                add(&counter, -1);
+            }
+            break;
+        case 'm': //mutex
+            for (i = 0; i < iterations; i++) {
+                if (pthread_mutex_lock(&protect) != 0) {
+                    fprintf(stderr, "Error locking mutex\n");
+                    exit(1);
+                }
+                add(&counter, 1);
+                if (pthread_mutex_unlock(&protect) != 0) {
+                    fprintf(stderr, "Error unlocking mutex\n");
+                    exit(1);
+                }
+            }
+            for (i = 0; i < iterations; i++) {
+                if (pthread_mutex_lock(&protect) != 0) {
+                    fprintf(stderr, "Error locking mutex\n");
+                    exit(1);
+                }
+                add(&counter, -1);
+                if (pthread_mutex_unlock(&protect) != 0) {
+                    fprintf(stderr, "Error unlocking mutex\n");
+                    exit(1);
+                }
+            }
+            break;
+        case 's':  //spinlock
+            for (i = 0; i < iterations; i++) {
+                add(&counter, 1);
+            }
+            for (i = 0; i < iterations; i++) {
+                add(&counter, -1);
+            }
+            break;
+        case 'c':  //compare-and-swap
+            for (i = 0; i < iterations; i++) {
+                add(&counter, 1);
+            }
+            for (i = 0; i < iterations; i++) {
+                add(&counter, -1);
+            }
+            break;
+        default: 
+            fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's', 'c'] \n");
+            exit(1);
+            break;
+
     }
 }
 
@@ -31,8 +100,10 @@ int main(int argc, char *argv[]) {
         static struct option long_options[] = {
             {"threads", required_argument, 0, 't' },
             {"iterations", required_argument, 0, 'i' },
+            {"yield", no_argument, 0, 'y' },
+            {"sync", required_argument, 0, 's' },
             {0,     0,             0, 0 }};
-        c = getopt_long(argc, argv, "t:i:", long_options, &option_index);
+        c = getopt_long(argc, argv, "t:i:ys:", long_options, &option_index);
         if (c == -1) break;
         switch (c) {
             case 't':
@@ -49,16 +120,61 @@ int main(int argc, char *argv[]) {
                     exit(1);
                 }
                 break;
+            case 'y':
+                opt_yield = 1;
+                break;
+            case 's':
+                opt_sync = optarg[0];
+                if (!(opt_sync != 'm' || opt_sync != 's' || opt_sync != 'c')) {
+                    fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's', 'c'] \n");
+                    exit(1);
+                }
+                break;
             default:
-                fprintf(stderr, "Incorrect usage: accepted options are: [--threads=th_num --iterations=it_num]\n");
+                fprintf(stderr, "Incorrect usage, accepted options are: [--threads=th_num --iterations=it_num]\n");
                 exit(1);
         }
     }
-    threads = malloc(sizeof(pthread_t) * thread_num);
-    atexit(free_memory);
+
+    if (opt_sync == 'm') {
+        if (pthread_mutex_init(&protect, NULL) != 0) {
+            fprintf(stderr, "Error initializing mutex: %s\n", strerror(errno));
+            exit(1);
+        }
+    }
+
+    threads = malloc(sizeof(pthread_t) * thread_num); //allocate memory for array of threads
+    if (threads == NULL) {
+        fprintf(stderr, "Error, malloc (memory allocation) failed: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    atexit(free_memory); //must free allocated memory at exit
+
+    struct timespec start_time; //get start time
+    if (clock_gettime(CLOCK_MONOTONIC, &start_time) == -1) {
+        fprintf(stderr, "Error getting start time: %s\n", strerror(errno));
+        exit(1);
+    }
 
     for (int i = 0; i < thread_num; i++) { //create threads
-        pthread_create(threads[i], NULL, );
+        if (pthread_create(threads[i], NULL, thread_tasks, NULL) != 0) {
+            fprintf(stderr, "Error, creation of a thread failed: %s\n", strerror(errno));
+            exit(1);
+        }
+    }
+
+    for (int i = 0; i < thread_num; i++) { //join threads
+        if (pthread_join(threads[i], NULL) != 0) {
+            fprintf(stderr, "Error, joining threads failed: %s\n", strerror(errno));
+            exit(1);
+        }
+    } 
+
+    struct timespec end_time;  //get end time
+    if (clock_gettime(CLOCK_MONOTONIC, &end_time) == -1) {
+        fprintf(stderr, "Error getting start time: %s\n", strerror(errno));
+        exit(1);
     }
 
     exit(0);
