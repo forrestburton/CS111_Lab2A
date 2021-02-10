@@ -53,3 +53,6 @@ pthread_mutex_lock(3) man page - https://linux.die.net/man/3/pthread_mutex_lock
 copying string to buffer - https://stackoverflow.com/questions/25838628/copying-string-literals-in-c-into-an-character-array/25838679
 strcat in C - https://www.holbertonschool.com/coding-resource-strcat-in-c
 fprintf vs printf - https://stackoverflow.com/questions/4627330/difference-between-fprintf-printf-and-sprintf
+ weird void* function error - https://stackoverflow.com/questions/28018045/error-in-pointer-multithread-expected-void-void-but-argument-is-of
+ undefined reference to pthread - https://stackoverflow.com/questions/1662909/undefined-reference-to-pthread-create-in-linux
+ 

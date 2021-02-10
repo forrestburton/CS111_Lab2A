@@ -17,8 +17,6 @@ int opt_yield = 0;
 int opt_sync = 0;
 pthread_mutex_t protect;
 long spin_lock = 0;
-int iterations = 1;
-int thread_num = 1;
 
 void add(long long *pointer, long long value) {
     long long sum = *pointer + value;
@@ -42,7 +40,8 @@ void add_atomically(long long *counter, unsigned long val) {
     } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == 0);
 }
 
-void* thread_tasks(void) {
+void* thread_tasks(void *arg) {
+    int iterations = *((int*)arg);
     switch(opt_sync) {
         case 0:  //no sync option given
             for (int i = 0; i < iterations; i++) {
@@ -106,7 +105,9 @@ void* thread_tasks(void) {
 
 int main(int argc, char *argv[]) {
     int c;
-    
+    int iterations = 1;
+    int thread_num = 1;
+
     while(1) {
         int option_index = 0;
         static struct option long_options[] = {
@@ -170,7 +171,7 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < thread_num; i++) { //create threads
-        if (pthread_create(&threads[i], NULL, thread_tasks, NULL) != 0) {
+        if (pthread_create(&threads[i], NULL, thread_tasks, &iterations) != 0) {
             fprintf(stderr, "Error, creation of a thread failed: %s\n", strerror(errno));
             exit(1);
         }
