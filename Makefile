@@ -13,6 +13,11 @@ tests:
 	rm -f lab2_add.csv lab2_list.csv
 
 	#basic tests (no yield or sync option)
+	./lab2_add --threads=1 --iterations=100 >>lab2_add.csv
+	./lab2_add --threads=1 --iterations=1000 >>lab2_add.csv
+	./lab2_add --threads=1 --iterations=10000 >>lab2_add.csv
+	./lab2_add --threads=1 --iterations=100000 >>lab2_add.csv
+
 	./lab2_add --threads=2 --iterations=100 >>lab2_add.csv
 	./lab2_add --threads=2 --iterations=1000 >>lab2_add.csv
 	./lab2_add --threads=2 --iterations=10000 >>lab2_add.csv
@@ -118,7 +123,7 @@ graphs:
 	#gnuplot ./lab2_list.gp
 
 dist:
-	#tar -czvf lab2a-005324612.tar.gz lab2_add.c SortedList.h SortedList.c lab2_list.c lab2_add.csv lab2_list.csv lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png README Makefile 
-	tar -czvf lab2a-005324612.tar.gz lab2_add.c SortedList.h SortedList.c lab2_list.c README Makefile 
+	tar -czvf lab2a-005324612.tar.gz lab2_add.c SortedList.h SortedList.c lab2_list.c lab2_add.csv lab2_list.csv lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png README Makefile 
+	#tar -czvf lab2a-005324612.tar.gz lab2_add.c SortedList.h SortedList.c lab2_list.c README Makefile 
 clean:
 	rm -f lab2_add lab2_list *tar.gz
