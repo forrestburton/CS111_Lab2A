@@ -40,7 +40,7 @@ void add_atomically(long long *counter, unsigned long val) {
         if (opt_yield) {
             sched_yield();
         }
-    } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == 0);
+    } while (__sync_val_compare_and_swap(counter, curr_val, incremented_val) != curr_val);
 }
 
 void* thread_tasks(void *arg) {
