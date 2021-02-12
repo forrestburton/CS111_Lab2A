@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include <sched.h>
+#include <sched.h>
 
 /**
  * SortedList_insert ... insert an element into a sorted list
@@ -30,7 +30,7 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
     SortedListElement_t *cur = list->next;
     SortedListElement_t *tmp = list;
 
-    while (cur != list && strcmp(cur->key, element->key > 0)) { //circular list
+    while (cur != list && strcmp(cur->key, element->key) > 0) { //circular list
         tmp = cur;
         cur = cur->next;
     }
@@ -110,7 +110,7 @@ SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key) {
     SortedListElement_t *cur = list->next;
 
     while (strcmp(cur->key, key) != 0 && cur != list) {
-        if (strmp(cur->key, key) > 0) {  //ascending so if values are > than key then its not in the list
+        if (strcmp(cur->key, key) > 0) {  //ascending so if values are > than key then its not in the list
             return NULL;
         }
 
