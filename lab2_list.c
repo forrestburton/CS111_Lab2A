@@ -104,17 +104,34 @@ void* thread_tasks(void *num_thread) {
     }
 
     //lookup, remove
+    SortedListElement_t* kill;
     for (i = base_index; i < base_index + iterations; i++) {
         switch(opt_sync) {
             case 0:  //no sync option given
-                
+                kill = SortedList_lookup(head, pool[i].key);
+                if (kill == NULL) {
+                    fprintf(stderr, "Error looking up node for deletion\n");
+                    exit(2);
+                }
+                if (SortedList_delete(kill) == 1) {
+                    fprintf(stderr, "Error deleting node\n");
+                    exit(2);
+                }
                 break;
             case 'm': //mutex
                 if (pthread_mutex_lock(&protect) != 0) {
                     fprintf(stderr, "Error locking mutex\n");
                     exit(1);
                 }
-                add(&counter, 1);
+                kill = SortedList_lookup(head, pool[i].key);
+                if (kill == NULL) {
+                    fprintf(stderr, "Error looking up node for deletion\n");
+                    exit(2);
+                }
+                if (SortedList_delete(kill) == 1) {
+                    fprintf(stderr, "Error deleting node\n");
+                    exit(2);
+                }
                 if (pthread_mutex_unlock(&protect) != 0) {
                     fprintf(stderr, "Error unlocking mutex\n");
                     exit(1);
@@ -122,7 +139,15 @@ void* thread_tasks(void *num_thread) {
                 break;
             case 's':  //spinlock
                 while (__sync_lock_test_and_set(&spin_lock, 1));
-                add(&counter, 1);
+                kill = SortedList_lookup(head, pool[i].key);
+                if (kill == NULL) {
+                    fprintf(stderr, "Error looking up node for deletion\n");
+                    exit(2);
+                }
+                if (SortedList_delete(kill) == 1) {
+                    fprintf(stderr, "Error deleting node\n");
+                    exit(2);
+                }
                 __sync_lock_release(&spin_lock);
                 break;
             default: 
@@ -279,6 +304,11 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
+    if (SortedList_length(head) != 0) {
+        fprintf(stderr, "\n");
+        exit(1);
+    }
+
     //get total time
     unsigned long total_time_nsec; 
     long nsec = end_time.tv_nsec - start_time.tv_nsec;
@@ -286,11 +316,11 @@ int main(int argc, char *argv[]) {
     total_time_nsec = sec*1000000000 + nsec;
 
     //get average time per operation
-    long ops = thread_num * iterations * 2;
+    long ops = thread_num * iterations * 3;
     long avg_time_per_op = total_time_nsec / ops;
 
     //print out stats - Name of test, thread#, itera#, operation#, runtime, avg t/oper, total
-    char output[50] = "";
+    char output[80] = "";
     strcat(output, "list-");
     //list-yieldopts-syncopts
     if (opt_y) {
