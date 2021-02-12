@@ -2,14 +2,14 @@
 #EMAIL: burton.forrest10@gmail.com
 #ID: 005324612
 
-default:
+build:
 	gcc -Wall -Wextra -pthread -g -o lab2_add lab2_add.c
 	gcc -Wall -Wextra -pthread -g -o lab2_list lab2_list.c SortedList.c
 
 add:
 	gcc -Wall -Wextra -pthread -g -o lab2_add lab2_add.c
 
-tests:
+tests: make
 	rm -f lab2_add.csv lab2_list.csv
 
 	#basic tests (no yield or sync option)
@@ -117,6 +117,33 @@ tests:
 	./lab2_add --threads=4 --iterations=10000 --sync=c >>lab2_add.csv
 	./lab2_add --threads=8 --iterations=10000 --sync=c >>lab2_add.csv
 	./lab2_add --threads=12 --iterations=10000 --sync=c >>lab2_add.csv
+
+	#List Tests (10, 100, 1000, 10000, 20000)
+	./lab2_list --threads=1 --iterations=10 >>lab2_list.csv
+	./lab2_list --threads=1 --iterations=100 >>lab2_list.csv
+	./lab2_list --threads=1 --iterations=1000 >>lab2_list.csv
+	./lab2_list --threads=1 --iterations=10000 >>lab2_list.csv
+	./lab2_list --threads=1 --iterations=20000 >>lab2_list.csv
+
+	-./lab2_list --threads=2 --iterations=1 >>lab2_list.csv
+	-./lab2_list --threads=2 --iterations=10 >>lab2_list.csv
+	-./lab2_list --threads=2 --iterations=100 >>lab2_list.csv
+	-./lab2_list --threads=2 --iterations=1000 >>lab2_list.csv
+
+	-./lab2_list --threads=4 --iterations=1 >>lab2_list.csv
+	-./lab2_list --threads=4 --iterations=10 >>lab2_list.csv
+	-./lab2_list --threads=4 --iterations=100 >>lab2_list.csv
+	-./lab2_list --threads=4 --iterations=1000 >>lab2_list.csv
+
+	-./lab2_list --threads=8 --iterations=1 >>lab2_list.csv
+	-./lab2_list --threads=8 --iterations=10 >>lab2_list.csv
+	-./lab2_list --threads=8 --iterations=100 >>lab2_list.csv
+	-./lab2_list --threads=8 --iterations=1000 >>lab2_list.csv
+
+	-./lab2_list --threads=12 --iterations=1 >>lab2_list.csv
+	-./lab2_list --threads=12 --iterations=10 >>lab2_list.csv
+	-./lab2_list --threads=12 --iterations=100 >>lab2_list.csv
+	-./lab2_list --threads=12 --iterations=1000 >>lab2_list.csv
 
 	#List Tests (10, 100, 1000, 10000, 20000)
 	./lab2_list --threads=1 --iterations=10 >>lab2_list.csv
@@ -273,12 +300,12 @@ tests:
 	./lab2_list --threads=24 --iterations=1000 --sync=s >>lab2_list.csv  
   
 
-graphs:
+graphs: tests
 	gnuplot ./lab2_add.gp
 	gnuplot ./lab2_list.gp
 
-dist:
-	tar -czvf lab2a-005324612.tar.gz lab2_add.c SortedList.h SortedList.c lab2_list.c lab2_add.csv lab2_list.csv lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png README Makefile 
+dist: graphs
+	tar -czvf lab2a-005324612.tar.gz lab2_add.c SortedList.h SortedList.c lab2_list.c lab2_add.gp lab2_list.gp lab2_add.csv lab2_list.csv lab2_add-1.png lab2_add-2.png lab2_add-3.png lab2_add-4.png lab2_add-5.png lab2_list-1.png lab2_list-2.png lab2_list-3.png lab2_list-4.png README Makefile 
 	
 clean:
 	rm -f lab2_add lab2_list *tar.gz
