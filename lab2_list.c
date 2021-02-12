@@ -10,17 +10,23 @@
 #include <pthread.h> 
 #include <time.h>
 #include <string.h>
+#include "SortedList.h"
 
 pthread_t* threads = NULL;
 long long counter = 0;
-int opt_yield = 0;
+int iterations = 1;
+int thread_num = 1;
+char yield_output[4];
+int opt_y = 0;
 int opt_sync = 0;
 pthread_mutex_t protect;
 long spin_lock = 0;
+SortedListElement_t *head = NULL
+SortedListElement_t *pool = NULL
 
 void add(long long *pointer, long long value) {
     long long sum = *pointer + value;
-    if (opt_yield) {
+    if (opt_y) {
         sched_yield();
     }
     *pointer = sum;
@@ -30,6 +36,7 @@ void free_memory(void) {
     if (threads != NULL) {
         free(threads);
     }
+    free(pool);
 }
 
 void add_atomically(long long *counter, unsigned long val) {
@@ -37,6 +44,9 @@ void add_atomically(long long *counter, unsigned long val) {
     do {
         curr_val = *counter;
         incremented_val = curr_val + val;
+        if (opt_y) {
+            sched_yield();
+        }
     } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == 0);
 }
 
@@ -105,18 +115,16 @@ void* thread_tasks(void *arg) {
 
 int main(int argc, char *argv[]) {
     int c;
-    int iterations = 1;
-    int thread_num = 1;
 
     while(1) {
         int option_index = 0;
         static struct option long_options[] = {
             {"threads", required_argument, 0, 't' },
             {"iterations", required_argument, 0, 'i' },
-            {"yield", no_argument, 0, 'y' },
+            {"yield", required_argument, 0, 'y' },
             {"sync", required_argument, 0, 's' },
             {0,     0,             0, 0 }};
-        c = getopt_long(argc, argv, "t:i:ys:", long_options, &option_index);
+        c = getopt_long(argc, argv, "t:i:y:s:", long_options, &option_index);
         if (c == -1) break;
         switch (c) {
             case 't':
@@ -134,12 +142,37 @@ int main(int argc, char *argv[]) {
                 }
                 break;
             case 'y':
-                opt_yield = 1;
+                opt_y = 1;
+                int length = strlen(optarg);
+                if (length >= 4) {
+                    fprintf(stderr, "Incorrect yield argument, correct usage is --yield=[i,d,l,id,il,dl,idl]");
+                    exit(1);
+                }
+
+                for (int i = 0; i < length; i++) {
+                    char cur = optarg[i];
+                    if (cur == 'i') {
+                        strcat(yield_output, 'i');
+                        opt_yield = opt_yield | INSERT_YIELD;
+                    }
+                    else if (cur == 'd') {
+                        strcat(yield_output, 'd');
+                        opt_yield = opt_yield | DELETE_YIELD;
+                    }
+                    else if (cur == 'l') {
+                        strcat(yield_output, 'l');
+                        opt_yield = opt_yield | LOOKUP_YIELD;
+                    }
+                    else {
+                        fprintf(stderr, "Incorrect yield argument, correct usage is --yield=[i,d,l,id,il,dl,idl]");
+                        exit(1);
+                    }
+                }
                 break;
             case 's':
                 opt_sync = optarg[0];
-                if (!(opt_sync != 'm' || opt_sync != 's' || opt_sync != 'c')) {
-                    fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's', 'c'] \n");
+                if (!(opt_sync != 'm' || opt_sync != 's')) {
+                    fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's'] \n");
                     exit(1);
                 }
                 break;
@@ -147,6 +180,36 @@ int main(int argc, char *argv[]) {
                 fprintf(stderr, "Incorrect usage, accepted options are: [--threads=th_num --iterations=it_num]\n");
                 exit(1);
         }
+    }
+    atexit(free_memory); //must free allocated memory at exit
+
+    head = pool;
+    head->key = NULL;
+    head->prev = head;
+    head->next = head;
+
+    pool = malloc(thread_num * iterations * sizeof(SortedListElement_t));
+    if (pool == NULL) {
+        fprintf(stderr, "Error initializing memory for pool of elements: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    srand(time(NULL));  
+    for (i = 0; i < thread_num * iterations; i++) { //initialize list elements with random keys
+        int rand_length = (rand() % (12 - 2 + 1)) + 2;   //random key length of range 2-12
+        char* rand_key = NULL;
+        rand_key = (char*) malloc(rand_length*sizeof(char)); 
+        if (rand_key == NULL) {
+            fprintf(stderr, "Error initializing memory for key: %s\n", strerror(errno));
+            exit(1);
+        }
+        rand_key[rand_length-1] = '\0';
+
+        for (int i = 0; i < rand_length - 1; i++) {
+            int rand_int = rand() % 26;  //random integer 0-25 for random english letter character
+            rand_key[i] = rand_int;
+        }
+        pool[i].key = rand_key;
     }
 
     if (opt_sync == 'm') {
@@ -162,7 +225,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    atexit(free_memory); //must free allocated memory at exit
 
     struct timespec start_time; //get start time
     if (clock_gettime(CLOCK_MONOTONIC, &start_time) == -1) {
@@ -202,14 +264,17 @@ int main(int argc, char *argv[]) {
 
     //print out stats - Name of test, thread#, itera#, operation#, runtime, avg t/oper, total
     char output[50] = "";
-    strcat(output, "add");
-
-    if (opt_yield) {
-        strcat(output, "-yield");
+    strcat(output, "list-");
+    //list-yieldopts-syncopts
+    if (opt_y) {
+        strcat(output, yield_output);
+    }
+    else {
+        strcat(output, "none");
     }
 
     //get name of test
-    switch(opt_sync) {
+    switch (opt_sync) {
         case 0:  //no sync option given
             strcat(output, "-none");
             break;
