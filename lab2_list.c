@@ -39,7 +39,7 @@ void* thread_tasks(void *num_thread) {
     int base_index = n_thread * iterations;
 
     //insert
-    for (i = base_index; i < base_index + iterations; i++) {
+    for (int i = base_index; i < base_index + iterations; i++) {
         switch(opt_sync) {
             case 0:  //no sync option given
                 SortedList_insert(head, &pool[i]);
@@ -70,7 +70,7 @@ void* thread_tasks(void *num_thread) {
     //check length
     switch(opt_sync) {
         case 0:  //no sync option given
-            if (SortedList_length(&head) < 0) {
+            if (SortedList_length(head) < 0) {
                 fprintf(stderr, "Error: List is corrupted\n");
                 exit(2);
             }
@@ -80,7 +80,7 @@ void* thread_tasks(void *num_thread) {
                 fprintf(stderr, "Error locking mutex\n");
                 exit(1);
             }
-            if (SortedList_length(&head) < 0) {
+            if (SortedList_length(head) < 0) {
                 fprintf(stderr, "Error: List is corrupted\n");
                 exit(2);
             }
@@ -91,7 +91,7 @@ void* thread_tasks(void *num_thread) {
             break;
         case 's':  //spinlock
             while (__sync_lock_test_and_set(&spin_lock, 1));
-            if (SortedList_length(&head) < 0) {
+            if (SortedList_length(head) < 0) {
                 fprintf(stderr, "Error: List is corrupted\n");
                 exit(2);
             }
@@ -198,15 +198,15 @@ int main(int argc, char *argv[]) {
                 for (int i = 0; i < length; i++) {
                     char cur = optarg[i];
                     if (cur == 'i') {
-                        strcat(yield_output, 'i');
+                        strcat(yield_output, "i");
                         opt_yield = opt_yield | INSERT_YIELD;
                     }
                     else if (cur == 'd') {
-                        strcat(yield_output, 'd');
+                        strcat(yield_output, "d");
                         opt_yield = opt_yield | DELETE_YIELD;
                     }
                     else if (cur == 'l') {
-                        strcat(yield_output, 'l');
+                        strcat(yield_output, "l");
                         opt_yield = opt_yield | LOOKUP_YIELD;
                     }
                     else {
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
     }
 
     srand(time(NULL));  
-    for (i = 0; i < thread_num * iterations; i++) { //initialize list elements with random keys
+    for (int i = 0; i < thread_num * iterations; i++) { //initialize list elements with random keys
         int rand_length = (rand() % (12 - 2 + 1)) + 2;   //random key length of range 2-12
         char* rand_key = NULL;
         rand_key = (char*) malloc(rand_length*sizeof(char)); 
@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
 
     int* num_thread = NULL;
     num_thread = malloc(thread_num * sizeof(int));  //thread number for starting index
-    if (num_threads == NULL) {
+    if (num_thread == NULL) {
         fprintf(stderr, "Error, malloc (memory allocation) failed for thread numbers: %s\n", strerror(errno));
         exit(1);
     }
