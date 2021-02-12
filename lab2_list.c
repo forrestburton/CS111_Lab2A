@@ -48,7 +48,7 @@ void free_memory(void) {
 
 void* thread_tasks(void *num_thread) {
     int n_thread = *((int*)num_thread);
-    int base_index = n_thread * iterations;
+    int base_index = n_thread;
 
     //insert
     for (int i = base_index; i < base_index + iterations; i++) {
@@ -117,17 +117,17 @@ void* thread_tasks(void *num_thread) {
 
     //lookup, remove
     SortedListElement_t* kill;
+    int stop = base_index + iterations;
     for (int i = base_index; i < base_index + iterations; i++) {
         switch(opt_sync) {
             case 0:  //no sync option given
                 kill = SortedList_lookup(head, pool[i].key);
                 if (kill == NULL) {
-                    //printf(*pool[i].key, %s);
-                    fprintf(stderr, "Error looking up node for deletion\n");
+                    fprintf(stderr, "Error looking up node for deletion, key is:%d, i is: %d, stop point is:%d, threads:%d, iterations:%d\n", *pool[i].key, i, stop, thread_num, iterations);
                     exit(2);
                 }
                 if (SortedList_delete(kill) == 1) {
-                    fprintf(stderr, "Error deleting node\n");
+                    fprintf(stderr, "Error deleting node, key is:%d, i is: %d, stop point is: %d, threads:%d, iterations:%d\n", *pool[i].key, i, stop, thread_num, iterations);
                     exit(2);
                 }
                 break;
