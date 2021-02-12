@@ -87,3 +87,5 @@ weird void* function error - https://stackoverflow.com/questions/28018045/error-
 undefined reference to pthread - https://stackoverflow.com/questions/1662909/undefined-reference-to-pthread-create-in-linux
 generating random integers - https://stackoverflow.com/questions/1202687/how-do-i-get-a-specific-range-of-numbers-from-rand
 https://www.geeksforgeeks.org/generating-random-number-range-c/
+valgrind help - https://stackoverflow.com/questions/5134891/how-do-i-use-valgrind-to-find-memory-leaks
+https://stackoverflow.com/questions/23791398/is-not-stackd-mallocd-or-recently-freed-when-all-the-variables-is-used/23802904

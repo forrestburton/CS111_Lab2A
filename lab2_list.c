@@ -11,6 +11,7 @@
 #include <time.h>
 #include <string.h>
 #include "SortedList.h"
+#include <signal.h>
 
 pthread_t* threads = NULL;
 long long counter = 0;
@@ -19,10 +20,17 @@ int thread_num = 1;
 char yield_output[4];
 int opt_y = 0;
 int opt_sync = 0;
+int opt_yield = 0;
 pthread_mutex_t protect;
 long spin_lock = 0;
+int* num_thread = NULL;
 SortedListElement_t *head = NULL;
 SortedListElement_t *pool = NULL;
+
+void catch_seg_fault() {
+    fprintf(stderr, "Signal: Caught seg fault \n");
+    exit(2);
+}
 
 void free_memory(void) {
     if (threads != NULL) {
@@ -31,7 +39,12 @@ void free_memory(void) {
     for (int i = 0; i < iterations * thread_num; i++) {
         free((char*)(pool[i].key));
     }
-    free(pool);
+    if (pool != NULL) {
+        free(pool);
+    }
+    if (num_thread != NULL) {
+        free(num_thread);
+    }
 }
 
 void* thread_tasks(void *num_thread) {
@@ -105,7 +118,7 @@ void* thread_tasks(void *num_thread) {
 
     //lookup, remove
     SortedListElement_t* kill;
-    for (i = base_index; i < base_index + iterations; i++) {
+    for (int i = base_index; i < base_index + iterations; i++) {
         switch(opt_sync) {
             case 0:  //no sync option given
                 kill = SortedList_lookup(head, pool[i].key);
@@ -234,6 +247,8 @@ int main(int argc, char *argv[]) {
     head->prev = head;
     head->next = head;
 
+    signal(SIGSEGV, catch_seg_fault);
+
     pool = malloc(thread_num * iterations * sizeof(SortedListElement_t));
     if (pool == NULL) {
         fprintf(stderr, "Error initializing memory for pool of elements: %s\n", strerror(errno));
@@ -271,8 +286,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    int* num_thread = NULL;
-    num_thread = malloc(thread_num * sizeof(int));  //thread number for starting index
+    num_thread = (int*) malloc(thread_num * sizeof(int));  //thread number for starting index
     if (num_thread == NULL) {
         fprintf(stderr, "Error, malloc (memory allocation) failed for thread numbers: %s\n", strerror(errno));
         exit(1);
@@ -285,6 +299,7 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < thread_num; i++) { //create threads
+        num_thread[i] = i;
         if (pthread_create(&threads[i], NULL, thread_tasks, &num_thread[i]) != 0) {
             fprintf(stderr, "Error, creation of a thread failed: %s\n", strerror(errno));
             exit(1);

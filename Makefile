@@ -3,11 +3,11 @@
 #ID: 005324612
 
 default:
-	gcc -Wall -Wextra -pthread -o lab2_add lab2_add.c
-	gcc -Wall -Wextra -pthread -o lab2_list lab2_list.c SortedList.c
+	gcc -Wall -Wextra -pthread -o -g lab2_add lab2_add.c
+	gcc -Wall -Wextra -pthread -o -g lab2_list lab2_list.c SortedList.c
 
 add:
-	gcc -Wall -Wextra -pthread -o lab2_add lab2_add.c
+	gcc -Wall -Wextra -pthread -o -g lab2_add lab2_add.c
 
 tests:
 	rm -f lab2_add.csv lab2_list.csv
