@@ -21,8 +21,8 @@ int opt_y = 0;
 int opt_sync = 0;
 pthread_mutex_t protect;
 long spin_lock = 0;
-SortedListElement_t *head = NULL
-SortedListElement_t *pool = NULL
+SortedListElement_t *head = NULL;
+SortedListElement_t *pool = NULL;
 
 void free_memory(void) {
     if (threads != NULL) {
