@@ -9,7 +9,7 @@ build:
 add:
 	gcc -Wall -Wextra -pthread -g -o lab2_add lab2_add.c
 
-tests: make
+tests: build
 	rm -f lab2_add.csv lab2_list.csv
 
 	#basic tests (no yield or sync option)
