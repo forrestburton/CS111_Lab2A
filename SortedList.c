@@ -82,11 +82,8 @@ int SortedList_delete(SortedListElement_t *element) {
     SortedListElement_t *cur = element->next;
     SortedListElement_t *tmp = element->prev;
 
-    tmp->next = cur;
     cur->prev = tmp;
-
-    element->next = NULL;
-    element->prev = NULL;
+    tmp->next = cur;
 
     return 0;
 }
@@ -103,15 +100,15 @@ int SortedList_delete(SortedListElement_t *element) {
  * @return pointer to matching element, or NULL if none is found
  */
 SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key) {
-    if (list == NULL || key == NULL || list->key != NULL) {
+    if (list == NULL || key == NULL) {
         return NULL;
     }
 
     SortedListElement_t *cur = list->next;
 
-    while (strcmp(cur->key, key) != 0 && cur != list) {
-        if (strcmp(cur->key, key) > 0) {  //ascending so if values are > than key then its not in the list
-            return NULL;
+    while (cur != list) {
+        if (strcmp(cur->key, key) == 0) {  //ascending so if values are > than key then its not in the list
+            return cur;
         }
 
         if (opt_yield && LOOKUP_YIELD) {
@@ -121,7 +118,7 @@ SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key) {
         cur = cur->next;
     }
 
-    return cur;
+    return NULL;
 }
 
 /**

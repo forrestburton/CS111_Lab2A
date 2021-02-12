@@ -14,7 +14,6 @@
 #include <signal.h>
 
 pthread_t* threads = NULL;
-long long counter = 0;
 int iterations = 1;
 int thread_num = 1;
 char yield_output[4];
@@ -123,6 +122,7 @@ void* thread_tasks(void *num_thread) {
             case 0:  //no sync option given
                 kill = SortedList_lookup(head, pool[i].key);
                 if (kill == NULL) {
+                    //printf(*pool[i].key, %s);
                     fprintf(stderr, "Error looking up node for deletion\n");
                     exit(2);
                 }
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
     }
     atexit(free_memory); //must free allocated memory at exit
 
-    head = pool;
+    head = malloc(sizeof(SortedListElement_t));
     head->key = NULL;
     head->prev = head;
     head->next = head;
@@ -360,7 +360,7 @@ int main(int argc, char *argv[]) {
             break;
     }
 
-    fprintf(stdout, "%s,%d,%d,%ld,%lu,%ld,%lld\n", output, thread_num, iterations, ops, total_time_nsec, avg_time_per_op, counter);
+    fprintf(stdout, "%s,%d,%d,1,%ld,%lu,%ld\n", output, thread_num, iterations, ops, total_time_nsec, avg_time_per_op);
 
     exit(0);
 }
