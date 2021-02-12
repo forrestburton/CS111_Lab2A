@@ -60,12 +60,12 @@ Compare the variation in time per protected operation vs the number of threads f
 Comment on the relative rates of increase and differences in the shapes of the curves, and offer an explanation for these differences.
 
 The tarball contains:
-lab2_add.c:   C program which contains a shared variable add function. The program has the following options: --threads, --iterations.
+lab2_add.c:   C program which contains a shared variable add function. The program has the following options: --threads, --iterations, --sync.
               The progam outputs a CSV including: name of the test, number of threads, number of iterations, number of operations,
               total run time (in nanoseconds), average time per operation (in nanoseconds), and the total at end of the run
 lab2_list.c:  C program which outputs statistics after initializing an empty list and has the following options: --threads, --iterations, 
-              --yield. The program creates threads then records stastics. The program ouptuts a CSV including: name of test, number of
-              threads, number of iterations, number of lists, total number of operations performed, total run time (nanoseconds), average 
+              --yield, --sync. The program creates threads then records stastics. The program ouptuts a CSV including: name of test, number of
+              threads number of iterations, number of lists, total number of operations performed, total run time (nanoseconds), average 
               time per operation (nanoseconds).
 SortedList.c: C module which contains the following methods for implementing a double linked list: insert, delete, lookup, and length
 SortedList.h: Header file which describes the API for the double linked list operation
@@ -86,3 +86,4 @@ fprintf vs printf - https://stackoverflow.com/questions/4627330/difference-betwe
 weird void* function error - https://stackoverflow.com/questions/28018045/error-in-pointer-multithread-expected-void-void-but-argument-is-of
 undefined reference to pthread - https://stackoverflow.com/questions/1662909/undefined-reference-to-pthread-create-in-linux
 generating random integers - https://stackoverflow.com/questions/1202687/how-do-i-get-a-specific-range-of-numbers-from-rand
+https://www.geeksforgeeks.org/generating-random-number-range-c/

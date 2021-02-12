@@ -37,6 +37,9 @@ void add_atomically(long long *counter, unsigned long val) {
     do {
         curr_val = *counter;
         incremented_val = curr_val + val;
+        if (opt_yield) {
+            sched_yield();
+        }
     } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == 0);
 }
 

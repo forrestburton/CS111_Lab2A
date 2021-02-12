@@ -24,91 +24,112 @@ long spin_lock = 0;
 SortedListElement_t *head = NULL
 SortedListElement_t *pool = NULL
 
-void add(long long *pointer, long long value) {
-    long long sum = *pointer + value;
-    if (opt_y) {
-        sched_yield();
-    }
-    *pointer = sum;
-}
-
 void free_memory(void) {
     if (threads != NULL) {
         free(threads);
     }
+    for (int i = 0; i < iterations * thread_num; i++) {
+        free((char*)(pool[i].key));
+    }
     free(pool);
 }
 
-void add_atomically(long long *counter, unsigned long val) {
-    long long curr_val, incremented_val;    
-    do {
-        curr_val = *counter;
-        incremented_val = curr_val + val;
-        if (opt_y) {
-            sched_yield();
-        }
-    } while (__sync_bool_compare_and_swap(counter, curr_val, incremented_val) == 0);
-}
+void* thread_tasks(void *num_thread) {
+    int n_thread = *((int*)num_thread);
+    int base_index = n_thread * iterations;
 
-void* thread_tasks(void *arg) {
-    int iterations = *((int*)arg);
+    //insert
+    for (i = base_index; i < base_index + iterations; i++) {
+        switch(opt_sync) {
+            case 0:  //no sync option given
+                SortedList_insert(head, &pool[i]);
+                break;
+            case 'm': //mutex
+                if (pthread_mutex_lock(&protect) != 0) {
+                    fprintf(stderr, "Error locking mutex\n");
+                    exit(1);
+                }
+                SortedList_insert(head, &pool[i]);
+                if (pthread_mutex_unlock(&protect) != 0) {
+                    fprintf(stderr, "Error unlocking mutex\n");
+                    exit(1);
+                }
+                break;
+            case 's':  //spinlock
+                while (__sync_lock_test_and_set(&spin_lock, 1));
+                SortedList_insert(head, &pool[i]);
+                __sync_lock_release(&spin_lock);
+                break;
+            default: 
+                fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's'] \n");
+                exit(1);
+                break;
+        }   
+    }
+
+    //check length
     switch(opt_sync) {
         case 0:  //no sync option given
-            for (int i = 0; i < iterations; i++) {
-                add(&counter, 1);
-            }
-            for (int i = 0; i < iterations; i++) {
-                add(&counter, -1);
+            if (SortedList_length(&head) < 0) {
+                fprintf(stderr, "Error: List is corrupted\n");
+                exit(2);
             }
             break;
         case 'm': //mutex
-            for (int i = 0; i < iterations; i++) {
-                if (pthread_mutex_lock(&protect) != 0) {
-                    fprintf(stderr, "Error locking mutex\n");
-                    exit(1);
-                }
-                add(&counter, 1);
-                if (pthread_mutex_unlock(&protect) != 0) {
-                    fprintf(stderr, "Error unlocking mutex\n");
-                    exit(1);
-                }
+            if (pthread_mutex_lock(&protect) != 0) {
+                fprintf(stderr, "Error locking mutex\n");
+                exit(1);
             }
-            for (int i = 0; i < iterations; i++) {
-                if (pthread_mutex_lock(&protect) != 0) {
-                    fprintf(stderr, "Error locking mutex\n");
-                    exit(1);
-                }
-                add(&counter, -1);
-                if (pthread_mutex_unlock(&protect) != 0) {
-                    fprintf(stderr, "Error unlocking mutex\n");
-                    exit(1);
-                }
+            if (SortedList_length(&head) < 0) {
+                fprintf(stderr, "Error: List is corrupted\n");
+                exit(2);
+            }
+            if (pthread_mutex_unlock(&protect) != 0) {
+                fprintf(stderr, "Error unlocking mutex\n");
+                exit(1);
             }
             break;
         case 's':  //spinlock
-            for (int i = 0; i < iterations; i++) {
+            while (__sync_lock_test_and_set(&spin_lock, 1));
+            if (SortedList_length(&head) < 0) {
+                fprintf(stderr, "Error: List is corrupted\n");
+                exit(2);
+            }
+            __sync_lock_release(&spin_lock);
+            break;
+        default: 
+            fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's'] \n");
+            exit(1);
+            break;
+    }
+
+    //lookup, remove
+    for (i = base_index; i < base_index + iterations; i++) {
+        switch(opt_sync) {
+            case 0:  //no sync option given
+                
+                break;
+            case 'm': //mutex
+                if (pthread_mutex_lock(&protect) != 0) {
+                    fprintf(stderr, "Error locking mutex\n");
+                    exit(1);
+                }
+                add(&counter, 1);
+                if (pthread_mutex_unlock(&protect) != 0) {
+                    fprintf(stderr, "Error unlocking mutex\n");
+                    exit(1);
+                }
+                break;
+            case 's':  //spinlock
                 while (__sync_lock_test_and_set(&spin_lock, 1));
                 add(&counter, 1);
                 __sync_lock_release(&spin_lock);
-            }
-            for (int i = 0; i < iterations; i++) {
-                while (__sync_lock_test_and_set(&spin_lock, 1));
-                add(&counter, -1);
-                __sync_lock_release(&spin_lock);
-            }
-            break;
-        case 'c':  //compare-and-swap
-            for (int i = 0; i < iterations; i++) {
-                add_atomically(&counter, 1);
-            }
-            for (int i = 0; i < iterations; i++) {
-                add_atomically(&counter, -1);
-            }
-            break;
-        default: 
-            fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's', 'c'] \n");
-            exit(1);
-            break;
+                break;
+            default: 
+                fprintf(stderr, "Incorrect argument for sync, accepted are ['m', 's'] \n");
+                exit(1);
+                break;
+        }
     }
     return NULL;
 }
@@ -221,10 +242,16 @@ int main(int argc, char *argv[]) {
 
     threads = malloc(sizeof(pthread_t) * thread_num); //allocate memory for array of threads
     if (threads == NULL) {
-        fprintf(stderr, "Error, malloc (memory allocation) failed: %s\n", strerror(errno));
+        fprintf(stderr, "Error, malloc (memory allocation) failed for threads: %s\n", strerror(errno));
         exit(1);
     }
 
+    int* num_thread = NULL;
+    num_thread = malloc(thread_num * sizeof(int));  //thread number for starting index
+    if (num_threads == NULL) {
+        fprintf(stderr, "Error, malloc (memory allocation) failed for thread numbers: %s\n", strerror(errno));
+        exit(1);
+    }
 
     struct timespec start_time; //get start time
     if (clock_gettime(CLOCK_MONOTONIC, &start_time) == -1) {
@@ -233,7 +260,7 @@ int main(int argc, char *argv[]) {
     }
 
     for (int i = 0; i < thread_num; i++) { //create threads
-        if (pthread_create(&threads[i], NULL, thread_tasks, &iterations) != 0) {
+        if (pthread_create(&threads[i], NULL, thread_tasks, &num_thread[i]) != 0) {
             fprintf(stderr, "Error, creation of a thread failed: %s\n", strerror(errno));
             exit(1);
         }
@@ -283,9 +310,6 @@ int main(int argc, char *argv[]) {
             break;
         case 's':  //spinlock
             strcat(output, "-s");
-            break;
-        case 'c':  //compare-and-swap
-           strcat(output, "-c");
             break;
         default: 
             break;
